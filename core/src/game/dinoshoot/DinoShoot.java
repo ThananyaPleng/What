@@ -1,14 +1,23 @@
 package game.dinoshoot;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
-import game.dinishoot.screen.HomeScreen;
+import game.dinoshoot.screen.HomeScreen;
+
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 
 public class DinoShoot extends Game {
 
+	public SpriteBatch batch;
+	public BitmapFont font;
+	
 	@Override
 	public void create () {
-		setScreen(new HomeScreen());
+		batch = new SpriteBatch();
+		font = new BitmapFont();
+		
+		this.setScreen(new HomeScreen(this));
 	}
 
 	@Override
@@ -19,17 +28,9 @@ public class DinoShoot extends Game {
 	@Override
 	public void dispose () {
 		super.dispose();
+		
+		batch.dispose();
+		font.dispose();
 	}
 	
-	public void resize() {
-		super.resize(600, 700);
-	}
-	
-	public void pause() {
-		super.pause();
-	}
-	
-	public void resume() {
-		super.resume();
-	}
 }
