@@ -2,6 +2,10 @@ package game.dinoshoot.screen;
 
 import java.util.ArrayList;
 
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JButton;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
@@ -21,7 +25,7 @@ import com.badlogic.gdx.physics.box2d.World;
 
 import game.dinoshoot.DinoShoot;
 
-public class GameScreen implements Screen, InputProcessor {
+public class GameScreen extends JFrame implements Screen, InputProcessor {
 
 public static class Button {
 		
@@ -80,6 +84,8 @@ public static class Button {
 	private Box2DDebugRenderer renderer;
 	private static final float PPM = 100;
 	
+	JFrame newframe = new JFrame();
+
 	public GameScreen(final DinoShoot game) {
 		this.game = game;
 		camera = new OrthographicCamera();
@@ -96,7 +102,12 @@ public static class Button {
 			@Override
 			public void run() {
 				//edit to popup screen
-				//LevelScreen.this.game.setScreen(new GameScreen(LevelScreen.this.game));
+				GameScreen.this.game.setScreen(new HomeScreen(GameScreen.this.game));
+//				System.out.println("000");
+//				newframe.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//				newframe.setBounds(100, 600, 500, 500);
+//				newframe.setTitle("title");
+//				newframe.setVisible(true);
 			}
 		});
 		buttons.add(pauseBtn);
