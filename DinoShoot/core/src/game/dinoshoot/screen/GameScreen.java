@@ -77,9 +77,11 @@ public static class Button {
 	}
 
 	ArrayList<Button> buttons = new ArrayList<Button>();
-
+	Texture backGroundImage = new Texture(Gdx.files.internal("img/Background3.jpg"));
+	Sprite bg = new Sprite(backGroundImage);
 	final DinoShoot game;
 	OrthographicCamera camera;
+
 	private World world;
 	private Box2DDebugRenderer renderer;
 	private static final float PPM = 100;
@@ -89,21 +91,24 @@ public static class Button {
 	public GameScreen(final DinoShoot game) {
 		this.game = game;
 		camera = new OrthographicCamera();
-		camera.setToOrtho(false, 600 / PPM, 700 / PPM);
+		camera.setToOrtho(false, 600, 700);
+		//camera.setToOrtho(false, 600 / PPM, 700 / PPM);
 		renderer = new Box2DDebugRenderer();
 		
 		Texture pause = new Texture(Gdx.files.internal("img/BtnPause.png"));
 		Sprite pausebtn = new Sprite(pause);
 		pausebtn.setSize(150, 50);
 		pausebtn.setPosition(425, 500);
+		//pausebtn.setPosition(425 / PPM, 500 / PPM);------------------------
 		
 		Button pauseBtn = new Button(pausebtn, "pause_btn");
 		pauseBtn.setOnClickListener(new Runnable() {
+
 			@Override
 			public void run() {
 				//edit to popup screen
+				System.out.println("sys");
 				GameScreen.this.game.setScreen(new HomeScreen(GameScreen.this.game));
-//				System.out.println("000");
 //				newframe.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 //				newframe.setBounds(100, 600, 500, 500);
 //				newframe.setTitle("title");
@@ -158,6 +163,7 @@ public static class Button {
 		renderer.render(world, camera.combined);
 		
 		game.batch.begin();
+		game.batch.draw(backGroundImage, 0, 0);
 		for(Button btn: buttons) {
 			btn.getSprite().draw(game.batch);
 		}
@@ -197,6 +203,14 @@ public static class Button {
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+		Vector3 screenCoords = new Vector3(screenX, screenY, 0);
+		Vector3 worldCoords = camera.unproject(screenCoords);
+		
+		for(Button btn: buttons) {
+			if(btn.isInside(worldCoords)) {
+				btn.executeOnClick();
+			}
+		}
 		return false;
 	}
 
