@@ -20,6 +20,8 @@ import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
 
 import game.dinoshoot.DinoShoot;
+import game.dinoshoot.game.Egg;
+import game.dinoshoot.game.GameManager;
 import game.dinoshoot.ui.Button;
 
 public class GameScreen extends ScreenAdapter {
@@ -29,10 +31,11 @@ public class GameScreen extends ScreenAdapter {
     SpriteBatch batch;
     OrthographicCamera camera;
 
+    GameManager gameManager;
+
     // Overlay
     ShapeRenderer shapeRenderer;
     Button oResumeBtn, oQuitBtn; // overlay buttons
-    boolean pauseState = false; // overlay state & pause state
 
     Sprite background;
 
@@ -46,19 +49,24 @@ public class GameScreen extends ScreenAdapter {
         shapeRenderer = new ShapeRenderer();
 		renderer = new Box2DDebugRenderer();
 
+        gameManager = DinoShoot.instance.getGameManager();
+
         preparePhysics();
         prepareButtons();
 
         // BG
         Texture backGroundImage = new Texture(Gdx.files.internal("img/Background3.jpg"));
         background = new Sprite(backGroundImage);
+        background.setSize(425, 700);
+
+        DinoShoot.instance.getGameManager().setup();
 	}
 
 	private void prepareButtons() {
         Texture pause = new Texture(Gdx.files.internal("img/BtnPause.png"));
         Sprite pausebtn = new Sprite(pause);
         pausebtn.setSize(150, 50);
-        pausebtn.setPosition(425, 500);
+        pausebtn.setPosition(437.5f, 500);
 
         Button pauseBtn = new Button(pausebtn, "pause_btn");
         pauseBtn.setOnClickListener(new Runnable() {
@@ -66,7 +74,7 @@ public class GameScreen extends ScreenAdapter {
             @Override
             public void run() {
                 //open overlay (set pause state to true, set overlay state to true)
-                GameScreen.this.pauseState = true;
+                GameScreen.this.gameManager.setPause(true);
             }
         });
         buttons.add(pauseBtn);
@@ -82,7 +90,7 @@ public class GameScreen extends ScreenAdapter {
             @Override
             public void run() {
                 //close overlay (set pause state to false, set overlay state to false)
-                GameScreen.this.pauseState = false;
+                GameScreen.this.gameManager.setPause(false);
             }
         });
 
@@ -139,9 +147,13 @@ public class GameScreen extends ScreenAdapter {
 		for(Button btn: buttons) {
 			btn.getSprite().draw(batch);
 		}
+
+        for(Egg egg : DinoShoot.instance.getGameManager().getAllEggs()) {
+            egg.draw(batch);
+        }
 		batch.end();
 
-        if(pauseState) {
+        if(gameManager.isPause()) {
             /* RENDER OVERLAY RECT TO COVER THE SCREEN */
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
@@ -167,7 +179,7 @@ public class GameScreen extends ScreenAdapter {
     @Override
     public boolean keyDown(int keycode) {
         if(keycode == Input.Keys.ESCAPE) {
-            pauseState = !pauseState;
+            gameManager.setPause(!gameManager.isPause());
         }
 
         return false;
@@ -178,12 +190,14 @@ public class GameScreen extends ScreenAdapter {
 		Vector3 screenCoords = new Vector3(screenX, screenY, 0);
 		Vector3 worldCoords = camera.unproject(screenCoords);
 
-        if(!pauseState) {
+        if(!gameManager.isPause()) {
             for(Button btn: buttons) {
                 if(btn.isInside(worldCoords)) {
                     btn.executeOnClick();
                 }
             }
+
+            gameManager.createEggByWorldPosition(new Vector2(worldCoords.x, worldCoords.y));
         } else {
             if(oResumeBtn.isInside(worldCoords)) {
                 oResumeBtn.executeOnClick();
