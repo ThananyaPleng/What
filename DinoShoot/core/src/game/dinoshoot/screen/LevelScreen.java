@@ -20,9 +20,14 @@ public class LevelScreen extends ScreenAdapter {
 	SpriteBatch batch;
 	OrthographicCamera camera;
 	
+	Sprite background;
+
 	public LevelScreen() {
         batch = DinoShoot.instance.getBatch();
         camera = DinoShoot.instance.getCamera();
+
+        Texture backGroundImage = new Texture(Gdx.files.internal("img/background2.png"));
+        background = new Sprite(backGroundImage);
 
 		prepareButtons();
 	}
@@ -109,6 +114,7 @@ public class LevelScreen extends ScreenAdapter {
 		batch.setProjectionMatrix(camera.combined);
 		
 		batch.begin();
+		background.draw(batch);
 		for(Button btn: buttons) {
 			btn.getSprite().draw(batch);
 		}

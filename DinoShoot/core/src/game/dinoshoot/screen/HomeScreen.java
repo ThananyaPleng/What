@@ -17,12 +17,17 @@ public class HomeScreen extends ScreenAdapter {
 	
 	ArrayList<Button> buttons = new ArrayList<Button>();
 
-    SpriteBatch batch;
-    OrthographicCamera camera;
+	SpriteBatch batch;
+	OrthographicCamera camera;
 	
+	Sprite background;
+
 	public HomeScreen() {
         batch = DinoShoot.instance.getBatch();
         camera = DinoShoot.instance.getCamera();
+
+	Texture backGroundImage = new Texture(Gdx.files.internal("img/background2.png"));
+        background = new Sprite(backGroundImage);
 
         prepareButtons();
 	}
@@ -73,6 +78,7 @@ public class HomeScreen extends ScreenAdapter {
 		camera.update();
 
 		batch.begin();
+		background.draw(batch);
 		for(Button btn: buttons) {
 			btn.getSprite().draw(batch);
 		}

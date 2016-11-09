@@ -50,7 +50,7 @@ public class GameScreen extends ScreenAdapter {
         prepareButtons();
 
         // BG
-        Texture backGroundImage = new Texture(Gdx.files.internal("img/images.jpg"));
+        Texture backGroundImage = new Texture(Gdx.files.internal("img/Background3.jpg"));
         background = new Sprite(backGroundImage);
 	}
 
