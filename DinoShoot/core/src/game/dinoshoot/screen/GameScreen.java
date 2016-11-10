@@ -136,6 +136,8 @@ public class GameScreen extends ScreenAdapter {
         float dt = Gdx.graphics.getDeltaTime();
         world.step(dt, 8, 3);
 
+        gameManager.update(dt);
+
 		camera.update();
         batch.setProjectionMatrix(camera.combined);
 
@@ -197,7 +199,11 @@ public class GameScreen extends ScreenAdapter {
                 }
             }
 
-            gameManager.createEggByWorldPosition(new Vector2(worldCoords.x, worldCoords.y));
+            if(button == Input.Buttons.LEFT) {
+                gameManager.fireEggAtPosition(new Vector2(worldCoords.x, worldCoords.y));
+            } else if(button == Input.Buttons.RIGHT) {
+//                gameManager.removeEggByWorldPosition(new Vector2(worldCoords.x, worldCoords.y));
+            }
         } else {
             if(oResumeBtn.isInside(worldCoords)) {
                 oResumeBtn.executeOnClick();
