@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
 import game.dinoshoot.DinoShoot;
+import game.dinoshoot.utility.PositionHelper;
 
 import java.util.Random;
 
@@ -31,26 +32,45 @@ public class Egg {
         }
     }
 
-    private Sprite sprite;
+    // Egg State
     private Color color;
-
-    private Vector2 position;
+    private Vector2 gridPosition;
     private Vector2 speed = new Vector2(0, 0);
 
-    public Egg(float col, float row, Color color, boolean shiftPosition, float heightOffset) {
-        this.position = new Vector2(col, row);
-        this.color = color;
+    // Texture & Sprite
+    private Sprite sprite;
+    private Vector2 originPoint = new Vector2(25, 25);
 
-        // Pick sprite by color
-        setSpriteColor();
+    public Egg(float col, float row, Color color, boolean shiftBaseRow, float heightOffset) {
+        this.gridPosition = new Vector2(col, row);
 
-        // Calculate sprite position
-        calcSpritePosition(shiftPosition, heightOffset);
+        // Set color
+        setEggColor(color);
+
+        // Lock on Grid
+        lockOnGrid(shiftBaseRow, heightOffset);
     }
 
-    private void setSpriteColor() {
-        AssetManager assetManager = DinoShoot.instance.getAssetManager();
+    public void updateGridPositionBySpritePosition(boolean shiftBaseRow, float heightOffset) {
+        int row = (int)((getSpritePosition().y - (heightOffset * 50)) / 50);
+        int col = (int)((getSpritePosition().x - (PositionHelper.calcShiftPosition(row, shiftBaseRow) ? 0 : 25)) / 50);
 
+        setGridPosition(col, row);
+    }
+
+    public void lockOnGrid(boolean shiftBaseRow, float heightOffset) {
+        if(PositionHelper.calcShiftPosition(this.gridPosition.y, shiftBaseRow)) {
+            sprite.setX(gridPosition.x * sprite.getWidth());
+        } else {
+            sprite.setX(gridPosition.x * sprite.getWidth() + 25);
+        }
+        sprite.setY((gridPosition.y * sprite.getHeight()) + (50 * heightOffset));
+    }
+
+    public void setEggColor(Color color) {
+        this.color = color;
+
+        AssetManager assetManager = DinoShoot.instance.getAssetManager();
         switch (color) {
             case RED:
                 sprite = new Sprite(assetManager.get("img/red.png", Texture.class));
@@ -68,42 +88,46 @@ public class Egg {
                 sprite = new Sprite(assetManager.get("img/purple.png", Texture.class));
                 break;
         }
+
+        sprite.setPosition(sprite.getX() - originPoint.x, sprite.getY() - originPoint.y);
     }
 
-    private void calcSpritePosition(boolean shiftPosition, float heightOffset) {
-        if(shiftPosition) {
-            sprite.setX(position.x * sprite.getWidth() + 25);
-        } else {
-            sprite.setX(position.x * sprite.getWidth());
+    /**
+     * Draw a texture.
+     * Need to be called every frame.
+     * @param batch
+     */
+    public void draw(Batch batch) {
+        boolean isBatchDrawing = batch.isDrawing();
+
+        if(!isBatchDrawing) batch.begin();
+        sprite.draw(batch);
+        if(!isBatchDrawing) batch.end();
+    }
+
+    /**
+     * Update sprite gridPosition with speed.
+     * Need to be called every frame.
+     * @param dt Delta time of frames.
+     */
+    public void update(float dt) {
+        if(getSpeed().x != 0 || getSpeed().y != 0) {
+            Vector2 originPosition = getSpritePosition();
+
+            setSpritePosition(new Vector2(originPosition.x + (speed.x * dt), originPosition.y + (speed.y * dt)));
         }
-        sprite.setY((position.y * sprite.getHeight()) + (50 * heightOffset));
     }
 
-    public Vector2 getPosition() {
-        return position;
+    public Color getEggColor() {
+        return color;
     }
 
-    public void setPosition(float col, float row) {
-        this.position = new Vector2(col, row);
+    public Vector2 getGridPosition() {
+        return gridPosition;
     }
 
-    public void calcPositionBySpritePosition(boolean shiftPosition, float heightOffset) {
-        int row = (int)(((getSpritePosition().y + 25) - (heightOffset * 50)) / 50);
-        int col = (int)(((getSpritePosition().x + 25) - (shiftPosition ? 25 : 0)) / 50);
-
-        setPosition(col, row);
-    }
-
-    public void maintainOnGridPosition(boolean shiftPosition, float heightOffset) {
-        calcSpritePosition(shiftPosition, heightOffset);
-    }
-
-    public void setSpritePosition(Vector2 position) {
-        sprite.setPosition(position.x, position.y);
-    }
-
-    public Vector2 getSpritePosition() {
-        return new Vector2(sprite.getX(), sprite.getY());
+    public void setGridPosition(float col, float row) {
+        this.gridPosition = new Vector2(col, row);
     }
 
     public Vector2 getSpeed() {
@@ -114,20 +138,12 @@ public class Egg {
         this.speed = speed;
     }
 
-    /**
-     * Draw a texture (in render).
-     * @param batch
-     */
-    public void draw(Batch batch) {
-        sprite.draw(batch);
+    public Vector2 getSpritePosition() {
+        return new Vector2(sprite.getX() + originPoint.x, sprite.getY() + originPoint.y);
     }
 
-    /**
-     * Update sprite position with speed (in render).
-     */
-    public void update(float dt) {
-        Vector2 originPosition = getSpritePosition();
-        setSpritePosition(new Vector2(originPosition.x + (speed.x * dt), originPosition.y + (speed.y * dt)));
+    public void setSpritePosition(Vector2 position) {
+        sprite.setPosition(position.x - originPoint.x, position.y - originPoint.y);
     }
 
 }

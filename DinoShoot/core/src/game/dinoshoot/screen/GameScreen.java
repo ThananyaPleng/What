@@ -23,35 +23,35 @@ import game.dinoshoot.DinoShoot;
 import game.dinoshoot.game.Egg;
 import game.dinoshoot.game.GameManager;
 import game.dinoshoot.ui.Button;
+import game.dinoshoot.utility.PositionHelper;
 
 public class GameScreen extends ScreenAdapter {
 
-	ArrayList<Button> buttons = new ArrayList<Button>();
-
+    // Display elements
     SpriteBatch batch;
     OrthographicCamera camera;
 
+    // Game Manager
     GameManager gameManager;
 
-    // Overlay
+    // UIs
+    Sprite background;
+    ArrayList<Button> buttons = new ArrayList<Button>();
+
+    // Overlay UIs
     ShapeRenderer shapeRenderer;
     Button oResumeBtn, oQuitBtn; // overlay buttons
 
-    Sprite background;
-
-	private World world;
-	private Box2DDebugRenderer renderer;
-	private static final float PPM = 100;
+    // DEBUGs
+    boolean DEBUG_Draw_Grid = true;
 
 	public GameScreen() {
         batch = DinoShoot.instance.getBatch();
         camera = DinoShoot.instance.getCamera();
         shapeRenderer = new ShapeRenderer();
-		renderer = new Box2DDebugRenderer();
 
         gameManager = DinoShoot.instance.getGameManager();
 
-        preparePhysics();
         prepareButtons();
 
         // BG
@@ -59,7 +59,8 @@ public class GameScreen extends ScreenAdapter {
         background = new Sprite(backGroundImage);
         background.setSize(425, 700);
 
-        DinoShoot.instance.getGameManager().setup();
+        // Setup game
+        gameManager.setup();
 	}
 
 	private void prepareButtons() {
@@ -110,51 +111,38 @@ public class GameScreen extends ScreenAdapter {
         });
     }
 
-    private void preparePhysics() {
-        this.world = new World(new Vector2(0, -9.81f), true);
-        // edit to Edge after
-        BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyDef.BodyType.StaticBody;
-        bodyDef.position.set(400 / PPM , 700 / PPM);
-        Body bodyGround = world.createBody(bodyDef);
-
-        FixtureDef fixtureDef = new FixtureDef();
-
-        PolygonShape shape = new PolygonShape();
-        shape.setAsBox((float) 0.3 / PPM, 700 / PPM);
-
-        fixtureDef.shape = shape;
-        bodyGround.createFixture(fixtureDef);
-        // edit to Edge after
-    }
-
 	@Override
 	public void render(float delta) {
+        // Clear screen buffer
 		Gdx.gl.glClearColor(0, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+        // Get delta time
         float dt = Gdx.graphics.getDeltaTime();
-        world.step(dt, 8, 3);
 
-        gameManager.update(dt);
+        // Update screen
+        update(dt);
 
+        // Update camera & batch
 		camera.update();
         batch.setProjectionMatrix(camera.combined);
 
-		renderer.render(world, camera.combined);
-		
+        // Begin draw
 		batch.begin();
-        background.draw(batch);
+            background.draw(batch);
 
-		for(Button btn: buttons) {
-			btn.getSprite().draw(batch);
-		}
+            for(Button btn: buttons) {
+                btn.getSprite().draw(batch);
+            }
 
-        for(Egg egg : DinoShoot.instance.getGameManager().getAllEggs()) {
-            egg.draw(batch);
-        }
+            for(Egg egg : DinoShoot.instance.getGameManager().getAllEggs()) {
+                egg.draw(batch);
+            }
 		batch.end();
 
+        drawDebug();
+
+        // If game pause, draw overlay
         if(gameManager.isPause()) {
             /* RENDER OVERLAY RECT TO COVER THE SCREEN */
             Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -162,7 +150,7 @@ public class GameScreen extends ScreenAdapter {
 
             shapeRenderer.setProjectionMatrix(camera.combined);
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            shapeRenderer.setColor(0, 0, 0, (float) 0.75);
+            shapeRenderer.setColor(0, 0, 0, 0.75f);
             shapeRenderer.rect(0, 0, camera.viewportWidth, camera.viewportHeight);
             shapeRenderer.end();
 
@@ -178,10 +166,34 @@ public class GameScreen extends ScreenAdapter {
         }
 	}
 
+	private void update(float dt) {
+        gameManager.update(dt);
+    }
+
+    private void drawDebug() {
+        if(DEBUG_Draw_Grid) {
+            shapeRenderer.setProjectionMatrix(camera.combined);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(255, 0, 0, 1f);
+
+            for(int row = 0; row <= 10; row++) {
+                for(int col = 0; col <= 7; col++) {
+                    float y = (row * 50) + 23;
+                    float x = (col * 50) + 23 + (PositionHelper.calcShiftPosition(row, gameManager.isShiftBaseRow()) ? 0 : 25);
+                    shapeRenderer.rect(x, y + (50 * gameManager.getHeightOffset()), 4, 4);
+                }
+            }
+
+            shapeRenderer.end();
+        }
+    }
+
     @Override
     public boolean keyDown(int keycode) {
         if(keycode == Input.Keys.ESCAPE) {
             gameManager.setPause(!gameManager.isPause());
+        } else if(keycode == Input.Keys.F1) {
+            DEBUG_Draw_Grid = !DEBUG_Draw_Grid;
         }
 
         return false;
@@ -200,9 +212,11 @@ public class GameScreen extends ScreenAdapter {
             }
 
             if(button == Input.Buttons.LEFT) {
-                gameManager.fireEggAtPosition(new Vector2(worldCoords.x, worldCoords.y));
+                gameManager.fireEggToPoint(new Vector2(worldCoords.x, worldCoords.y));
+            } else if(button == Input.Buttons.MIDDLE) {
+                gameManager.createEggByWorldPosition(new Vector2(worldCoords.x, worldCoords.y));
             } else if(button == Input.Buttons.RIGHT) {
-//                gameManager.removeEggByWorldPosition(new Vector2(worldCoords.x, worldCoords.y));
+                gameManager.removeEggByWorldPosition(new Vector2(worldCoords.x, worldCoords.y));
             }
         } else {
             if(oResumeBtn.isInside(worldCoords)) {
