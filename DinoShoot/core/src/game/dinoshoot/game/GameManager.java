@@ -1,9 +1,11 @@
 package game.dinoshoot.game;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
 import game.dinoshoot.utility.PositionHelper;
 
 import java.util.ArrayList;
+import java.util.Stack;
 
 public class GameManager {
 
@@ -188,7 +190,7 @@ public class GameManager {
                         }
 
                         // Calculate distance of another egg
-                        if(originEggPosition.dst(otherEgg.getSpritePosition()) <= 50f) {
+                        if(originEggPosition.dst(otherEgg.getSpritePosition()) <= 45f) {
                             collide = true;
                             break;
                         }
@@ -202,13 +204,150 @@ public class GameManager {
                     // If collide, lock egg into grid and set speed to zero
                     if(collide) {
                         egg.setSpeed(new Vector2(0, 0));
+                        egg.updateGridPositionBySpritePosition(shiftBaseRow, heightOffset);
                         egg.lockOnGrid(shiftBaseRow, heightOffset);
                         isShooting = false;
+
+                        // TODO 4. check match color and destroy it
+                        final ArrayList<Egg> matchLinkedEgg = new ArrayList<Egg>();
+                        Stack<Egg> eggsWaitForCheck;
+                        Stack<Egg> tempStack = new Stack<Egg>();
+
+                        matchLinkedEgg.add(egg);
+                        tempStack.push(egg);
+
+                        boolean swapStack = true;
+
+                        while (swapStack) {
+                            swapStack = false;
+                            eggsWaitForCheck = tempStack;
+
+                            for(Egg currentEgg : eggsWaitForCheck) {
+                                tempStack = new Stack<Egg>();
+
+                                // Check surround current egg if match color
+                                float eggCol = currentEgg.getGridPosition().x, eggRow = currentEgg.getGridPosition().y;
+                                if(PositionHelper.calcShiftPosition(eggRow, shiftBaseRow)) {
+                                    Egg collideEgg;
+
+                                    if((collideEgg = getEggAtGrid(eggCol - 1, eggRow + 1)) != null) {
+                                        if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
+                                            matchLinkedEgg.add(collideEgg);
+                                            tempStack.push(collideEgg);
+                                            swapStack = true;
+                                        }
+                                    }
+
+                                    if((collideEgg = getEggAtGrid(eggCol, eggRow + 1)) != null) {
+                                        if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
+                                            matchLinkedEgg.add(collideEgg);
+                                            tempStack.push(collideEgg);
+                                            swapStack = true;
+                                        }
+                                    }
+
+                                    if((collideEgg = getEggAtGrid(eggCol - 1, eggRow)) != null) {
+                                        if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
+                                            matchLinkedEgg.add(collideEgg);
+                                            tempStack.push(collideEgg);
+                                            swapStack = true;
+                                        }
+                                    }
+
+                                    if((collideEgg = getEggAtGrid(eggCol + 1, eggRow)) != null) {
+                                        if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
+                                            matchLinkedEgg.add(collideEgg);
+                                            tempStack.push(collideEgg);
+                                            swapStack = true;
+                                        }
+                                    }
+
+                                    if((collideEgg = getEggAtGrid(eggCol - 1, eggRow - 1)) != null) {
+                                        if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
+                                            matchLinkedEgg.add(collideEgg);
+                                            tempStack.push(collideEgg);
+                                            swapStack = true;
+                                        }
+                                    }
+
+                                    if((collideEgg = getEggAtGrid(eggCol, eggRow - 1)) != null) {
+                                        if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
+                                            matchLinkedEgg.add(collideEgg);
+                                            tempStack.push(collideEgg);
+                                            swapStack = true;
+                                        }
+                                    }
+                                } else {
+                                    Egg collideEgg;
+
+                                    if((collideEgg = getEggAtGrid(eggCol, eggRow + 1)) != null) {
+                                        if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
+                                            matchLinkedEgg.add(collideEgg);
+                                            tempStack.push(collideEgg);
+                                            swapStack = true;
+                                        }
+                                    }
+
+                                    if((collideEgg = getEggAtGrid(eggCol + 1, eggRow + 1)) != null) {
+                                        if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
+                                            matchLinkedEgg.add(collideEgg);
+                                            tempStack.push(collideEgg);
+                                            swapStack = true;
+                                        }
+                                    }
+
+                                    if((collideEgg = getEggAtGrid(eggCol - 1, eggRow)) != null) {
+                                        if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
+                                            matchLinkedEgg.add(collideEgg);
+                                            tempStack.push(collideEgg);
+                                            swapStack = true;
+                                        }
+                                    }
+
+                                    if((collideEgg = getEggAtGrid(eggCol + 1, eggRow)) != null) {
+                                        if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
+                                            matchLinkedEgg.add(collideEgg);
+                                            tempStack.push(collideEgg);
+                                            swapStack = true;
+                                        }
+                                    }
+
+                                    if((collideEgg = getEggAtGrid(eggCol, eggRow - 1)) != null) {
+                                        if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
+                                            matchLinkedEgg.add(collideEgg);
+                                            tempStack.push(collideEgg);
+                                            swapStack = true;
+                                        }
+                                    }
+
+                                    if((collideEgg = getEggAtGrid(eggCol + 1, eggRow - 1)) != null) {
+                                        if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
+                                            matchLinkedEgg.add(collideEgg);
+                                            tempStack.push(collideEgg);
+                                            swapStack = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // if match egg more than 2, destroy all of it
+                        if(matchLinkedEgg.size() > 2) {
+                            Gdx.app.postRunnable(new Runnable() {
+                                @Override
+                                public void run() {
+                                    for(Egg matchEgg : matchLinkedEgg) {
+                                        eggEntities.remove(matchEgg);
+                                    }
+
+                                    matchLinkedEgg.clear();
+                                }
+                            });
+                        }
+                        // END 4.
+
+                        // TODO 5. check if any egg is dependent (not link with another egg that link to roof)
                     }
-
-                    // TODO 4. check match color and destroy it
-
-                    // TODO 5. check if any egg is dependent (not link with another egg that link to roof)
                 }
             }
         }
@@ -244,6 +383,16 @@ public class GameManager {
 
     public boolean isShiftBaseRow() {
         return shiftBaseRow;
+    }
+
+    public Egg getEggAtGrid(float col, float row) {
+        for(Egg egg : eggEntities) {
+            if(egg.getGridPosition().x == col && egg.getGridPosition().y == row) {
+                return egg;
+            }
+        }
+        
+        return null;
     }
 
 }
