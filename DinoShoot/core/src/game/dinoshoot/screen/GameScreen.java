@@ -1,7 +1,6 @@
 package game.dinoshoot.screen;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -40,17 +39,17 @@ public class GameScreen extends ScreenAdapter {
 
     // Overlay UIs
     ShapeRenderer shapeRenderer = new ShapeRenderer();
-    Button oResumeBtn, oQuitBtn; // overlay buttons
+    Button oResumeBtn, oRestartBtn, oMainMenuBtn; // overlay buttons
 
     // DEBUGs
     boolean DEBUG_Draw_Grid = true;
 
-	public GameScreen() {
+	public GameScreen(GameManager.Level level) {
         prepareButtons();
         prepareSprite();
 
         // Setup game
-        gameManager.setup();
+        gameManager.restart(level);
 	}
 
 	private void prepareButtons() {
@@ -62,33 +61,46 @@ public class GameScreen extends ScreenAdapter {
                     @Override
                     public void run() {
                         //open overlay (change game state to pause)
-                        GameScreen.this.gameManager.setState(GameManager.State.PAUSE);
+                        gameManager.setState(GameManager.State.PAUSE);
                     }
                 }
         );
 
         oResumeBtn = new Button(
-                assetManager.get("img/BtnPause.png", Texture.class),
+                assetManager.get("img/BtnResume.png", Texture.class),
+                new Vector2(150, 50),
+                new Vector2(225f, 400),
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        //close overlay (change game state to playing)
+                        gameManager.setState(GameManager.State.PLAYING);
+                    }
+                }
+        );
+
+        oRestartBtn = new Button(
+                assetManager.get("img/BtnRestart.png", Texture.class),
                 new Vector2(150, 50),
                 new Vector2(225f, 350),
                 new Runnable() {
                     @Override
                     public void run() {
                         //close overlay (change game state to playing)
-                        GameScreen.this.gameManager.setState(GameManager.State.PLAYING);
+                        gameManager.restart(gameManager.getLevel());
                     }
                 }
         );
 
-        oQuitBtn = new Button(
-                assetManager.get("img/BtnPause.png", Texture.class),
+        oMainMenuBtn = new Button(
+                assetManager.get("img/BtnMainMenu.png", Texture.class),
                 new Vector2(150, 50),
                 new Vector2(225f, 300),
                 new Runnable() {
                     @Override
                     public void run() {
-                        //exit game
-                        Gdx.app.exit();
+                        //go to home screen
+                        DinoShoot.instance.setScreen(new HomeScreen());
                     }
                 }
         );
@@ -132,7 +144,7 @@ public class GameScreen extends ScreenAdapter {
                 egg.draw(batch);
             }
 
-//            font.draw(batch, "TESTING 1 2 3 4", 500, 200);
+            font.draw(batch, String.valueOf(gameManager.getScore()), 430, 200);
 		batch.end();
 
         debug_DrawGrid();
@@ -162,7 +174,8 @@ public class GameScreen extends ScreenAdapter {
             /* RENDER OVERLAY BUTTON */
         batch.begin();
         oResumeBtn.draw(batch);
-        oQuitBtn.draw(batch);
+        oRestartBtn.draw(batch);
+        oMainMenuBtn.draw(batch);
         batch.end();
             /* END RENDER OVERLAY BUTTON */
     }
@@ -179,11 +192,15 @@ public class GameScreen extends ScreenAdapter {
         shapeRenderer.end();
 
         Gdx.gl.glDisable(GL20.GL_BLEND);
-            /* END RENDER */
+        /* END RENDER */
 
-            /* RENDER OVERLAY BUTTON */
-        //...
-            /* END RENDER OVERLAY BUTTON */
+        /* RENDER OVERLAY BUTTON */
+        batch.begin();
+        font.draw(batch, String.valueOf(gameManager.getScore()), 225, 500);
+        oRestartBtn.draw(batch);
+        oMainMenuBtn.draw(batch);
+        batch.end();
+        /* END RENDER OVERLAY BUTTON */
     }
 
     private void debug_DrawGrid() {
@@ -256,13 +273,19 @@ public class GameScreen extends ScreenAdapter {
             if(button == InputCommand.BUTTON_ACTION) {
                 if(oResumeBtn.isInside(worldCoords2DSpace)) {
                     oResumeBtn.executeOnClick();
-                } else if(oQuitBtn.isInside(worldCoords2DSpace)) {
-                    oQuitBtn.executeOnClick();
+                } else if(oMainMenuBtn.isInside(worldCoords2DSpace)) {
+                    oMainMenuBtn.executeOnClick();
+                } else if(oRestartBtn.isInside(worldCoords2DSpace)) {
+                    oRestartBtn.executeOnClick();
                 }
             }
         } else if(gameManager.getState() == GameManager.State.GAMEOVER) {
             if(button == InputCommand.BUTTON_ACTION) {
-                // DETECT BUTTON
+                if(oMainMenuBtn.isInside(worldCoords2DSpace)) {
+                    oMainMenuBtn.executeOnClick();
+                } else if(oRestartBtn.isInside(worldCoords2DSpace)) {
+                    oRestartBtn.executeOnClick();
+                }
             }
         }
 

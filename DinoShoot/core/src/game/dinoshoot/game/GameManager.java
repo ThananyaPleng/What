@@ -11,6 +11,11 @@ import java.util.Stack;
 @SuppressWarnings("Duplicates")
 public class GameManager {
 
+    // DEFAULT
+    private static final int MAX_EASY_MISSING = 8;
+    private static final int MAX_MEDIUM_MISSING = 5;
+    private static final int MAX_HARD_MISSING = 3;
+
     public enum State {
         SETUP,
         PLAYING,
@@ -27,12 +32,14 @@ public class GameManager {
     // Game State
     private State state = State.SETUP;
     private Level level = null;
+    private int score = 0;
+    private int continueHit = 0;
     private Egg eggWaitToShoot;
     private Egg eggShooting;
 
     private ArrayList<Egg> matchColorEgg = new ArrayList<Egg>();
-    private Stack<Egg> eggsWaitForCheck = new Stack<Egg>();
     private ArrayList<Egg> notLinkedEgg = new ArrayList<Egg>();
+    private Stack<Egg> eggsWaitForCheck = new Stack<Egg>();
 
     private int missingCount = 0;
 
@@ -184,6 +191,21 @@ public class GameManager {
         }
     }
 
+    private void moveDownEgg() {
+        shiftRowZero = !shiftRowZero;
+
+        for(Egg egg : eggEntities) {
+            Vector2 oldEggGrid = egg.getGridPosition();
+
+            egg.setGridPosition(oldEggGrid.x, oldEggGrid.y - 1);
+            egg.lockOnGrid(shiftRowZero, heightOffset);
+        }
+
+        for(int col = 0; col < 8; col++) {
+            eggEntities.add(new Egg(col, 10, Egg.Color.random(), shiftRowZero, heightOffset));
+        }
+    }
+
     private boolean isInGameArea(Vector2 point) {
         return point.x > 425 || point.x < 0 || point.y < 0 || point.y > 700;
     }
@@ -192,7 +214,9 @@ public class GameManager {
         return col > 7 || col < 0 || row > 10 || row < 0;
     }
 
-    public void setup() {
+    public void setup(Level level) {
+        this.level = level;
+
         for(int row = 5; row <= 10; row++) {
             for(int col = 0; col < 8; col++) {
                 eggEntities.add(new Egg(col, row, Egg.Color.random(), shiftRowZero, heightOffset));
@@ -202,6 +226,26 @@ public class GameManager {
         prepareEggToShoot();
 
         state = State.PLAYING;
+    }
+
+    public void restart(final Level level) {
+        Gdx.app.postRunnable(new Runnable() {
+            @Override
+            public void run() {
+                eggWaitToShoot = null;
+                eggShooting = null;
+                eggEntities.clear();
+                matchColorEgg.clear();
+                notLinkedEgg.clear();
+                eggsWaitForCheck.clear();
+
+                score = 0;
+                missingCount = 0;
+                continueHit = 0;
+
+                setup(level);
+            }
+        });
     }
 
     public void update(float dt) {
@@ -217,6 +261,10 @@ public class GameManager {
                 // 1. update egg
                 egg.update(dt);
                 // END 1.
+            }
+
+            if(state == State.GAMEOVER) {
+                return;
             }
 
             // If egg is shooting
@@ -273,9 +321,9 @@ public class GameManager {
 
                         // Check surround current egg if match color
                         float eggCol = currentEgg.getGridPosition().x, eggRow = currentEgg.getGridPosition().y;
-                        Egg collideEgg;
 
                         for(Vector2 cPosition : PositionHelper.calcSurroundPositions(eggCol, eggRow, shiftRowZero)) {
+                            Egg collideEgg;
                             if ((collideEgg = getEggAtGrid(cPosition.x, cPosition.y)) != null) {
                                 if (!matchColorEgg.contains(collideEgg) && collideEgg.getEggColor() == eggShooting.getEggColor()) {
                                     matchColorEgg.add(collideEgg);
@@ -302,9 +350,9 @@ public class GameManager {
                                 // Check surround current egg
                                 Egg nextEgg = eggsWaitForCheck.pop();
                                 float eggCol = nextEgg.getGridPosition().x, eggRow = nextEgg.getGridPosition().y;
-                                Egg collideEgg;
 
                                 for(Vector2 cPosition : PositionHelper.calcSurroundPositions(eggCol, eggRow, shiftRowZero)) {
+                                    Egg collideEgg;
                                     if ((collideEgg = getEggAtGrid(cPosition.x, cPosition.y)) != null) {
                                         if (!(matchColorEgg.contains(collideEgg) || notLinkedEgg.contains(collideEgg) || checkedEggList.contains(collideEgg))) {
                                             checkedEggList.add(collideEgg);
@@ -327,8 +375,7 @@ public class GameManager {
                     }
                     // End 5.
 
-                    // 6.
-                    // Post runnable for prevent ConCurrentException
+                    // 6. Post runnable for prevent ConCurrentException (destroy marked egg)
                     Gdx.app.postRunnable(new Runnable() {
                         @Override
                         public void run() {
@@ -350,17 +397,44 @@ public class GameManager {
                         }
                     });
 
-                    // 8. Update score
+                    // 8. if egg not destroyed, continue counting missing
+                    if(matchColorEgg.size() <= 2) {
+                        missingCount += 1;
+                        continueHit = 0;
 
-                    // 9. Reset shooting egg
+                        // 9. check if missing shot count is over threshold of current level, move down
+                        if ((level == Level.EASY && missingCount >= MAX_EASY_MISSING) ||
+                                (level == Level.MEDIUM && missingCount >= MAX_MEDIUM_MISSING) ||
+                                (level == Level.HARD && missingCount >= MAX_HARD_MISSING)) {
+                            moveDownEgg();
+
+                            missingCount = 0;
+                        }
+                    } else {
+                        missingCount = 0;
+                        continueHit += 1;
+
+                        // 10. Update score
+                        score += (100 + ((matchColorEgg.size() - 3) * 50) + (notLinkedEgg.size() * 20)) * continueHit;
+                    }
+
+                    // 11. Reset shooting egg
                     eggShooting = null;
-
-                    // TODO 10. if all egg is destroyed, move down 3 row
-                } else {
-                    // TODO 4. continue counting missing
-
-                    // TODO 5. check if missing shot count is over threshold of current level, move down
                 }
+            }
+
+            // 12. if all egg is destroyed, move down 3 row
+            if(eggEntities.size() == 1) {
+                Gdx.app.postRunnable(new Runnable() {
+                    @Override
+                    public void run() {
+                        for(int row = 8; row <= 10; row++) {
+                            for(int col = 0; col < 8; col++) {
+                                eggEntities.add(new Egg(col, row, Egg.Color.random(), shiftRowZero, heightOffset));
+                            }
+                        }
+                    }
+                });
             }
         }
     }
@@ -383,6 +457,10 @@ public class GameManager {
 
     public void setLevel(Level level) {
         this.level = level;
+    }
+
+    public int getScore() {
+        return score;
     }
 
     public int getHeightOffset() {

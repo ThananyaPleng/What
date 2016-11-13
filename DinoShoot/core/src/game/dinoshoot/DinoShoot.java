@@ -41,6 +41,8 @@ public class DinoShoot extends Game {
         assetManager.load("img/BtnBack.png", Texture.class);
         assetManager.load("img/BtnPause.png", Texture.class);
         assetManager.load("img/BtnResume.png", Texture.class);
+        assetManager.load("img/BtnRestart.png", Texture.class);
+        assetManager.load("img/BtnMainMenu.png", Texture.class);
         assetManager.load("img/BtnQuit.png", Texture.class);
 
         assetManager.load("img/BtnEasy.png", Texture.class);
@@ -49,7 +51,7 @@ public class DinoShoot extends Game {
         // Eggs
         assetManager.load("img/red.png", Texture.class);
         assetManager.load("img/orange.png", Texture.class);
-        assetManager.load("img/yellow.png", Texture.class);
+        assetManager.load("img/blue.png", Texture.class);
         assetManager.load("img/green.png", Texture.class);
         assetManager.load("img/purple.png", Texture.class);
         // Game deadline

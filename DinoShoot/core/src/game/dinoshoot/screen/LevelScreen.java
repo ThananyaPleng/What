@@ -48,7 +48,7 @@ public class LevelScreen extends ScreenAdapter {
                     @Override
                     public void run() {
                         // must edit use easy mode game
-                        DinoShoot.instance.setScreen(new GameScreen());
+                        DinoShoot.instance.setScreen(new GameScreen(GameManager.Level.EASY));
                     }
 
                 }
@@ -64,7 +64,7 @@ public class LevelScreen extends ScreenAdapter {
                     @Override
                     public void run() {
                         //must edit use medium mode game
-                        DinoShoot.instance.setScreen(new GameScreen());
+                        DinoShoot.instance.setScreen(new GameScreen(GameManager.Level.MEDIUM));
                     }
 
                 }
@@ -80,7 +80,7 @@ public class LevelScreen extends ScreenAdapter {
                     @Override
                     public void run() {
                         //must edit use hard mode game
-                        DinoShoot.instance.setScreen(new GameScreen());
+                        DinoShoot.instance.setScreen(new GameScreen(GameManager.Level.HARD));
                     }
 
                 }

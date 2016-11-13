@@ -14,7 +14,7 @@ public class Egg {
 
     public enum Color {
         RED,
-        YELLOW,
+        BLUE,
         ORANGE,
         GREEN,
         PURPLE;
@@ -23,7 +23,7 @@ public class Egg {
             int rand = new Random().nextInt(5);
             switch (rand) {
                 case 0: return RED;
-                case 1: return YELLOW;
+                case 1: return BLUE;
                 case 2: return ORANGE;
                 case 3: return GREEN;
                 case 4: return PURPLE;
@@ -75,8 +75,8 @@ public class Egg {
             case RED:
                 sprite = new Sprite(assetManager.get("img/red.png", Texture.class));
                 break;
-            case YELLOW:
-                sprite = new Sprite(assetManager.get("img/yellow.png", Texture.class));
+            case BLUE:
+                sprite = new Sprite(assetManager.get("img/blue.png", Texture.class));
                 break;
             case ORANGE:
                 sprite = new Sprite(assetManager.get("img/orange.png", Texture.class));
