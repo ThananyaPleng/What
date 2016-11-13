@@ -31,15 +31,33 @@ public class DinoShoot extends Game {
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 600, 700);
 
+        // Prepare assets
+        //
+        // Backgrounds
+        assetManager.load("img/Background3.jpg", Texture.class);
+        assetManager.load("img/background2.png", Texture.class);
+        // Buttons
+        assetManager.load("img/BtnStart.png", Texture.class);
+        assetManager.load("img/BtnBack.png", Texture.class);
+        assetManager.load("img/BtnPause.png", Texture.class);
+        assetManager.load("img/BtnResume.png", Texture.class);
+        assetManager.load("img/BtnQuit.png", Texture.class);
+
+        assetManager.load("img/BtnEasy.png", Texture.class);
+        assetManager.load("img/BtnMedium.png", Texture.class);
+        assetManager.load("img/BtnHard.png", Texture.class);
+        // Eggs
         assetManager.load("img/red.png", Texture.class);
         assetManager.load("img/orange.png", Texture.class);
         assetManager.load("img/yellow.png", Texture.class);
         assetManager.load("img/green.png", Texture.class);
         assetManager.load("img/purple.png", Texture.class);
+        // Game deadline
+        assetManager.load("img/deadline.png", Texture.class);
+        // Sync loading (wait to finish load)
         assetManager.finishLoading();
 
         gameManager = new GameManager();
-
         this.setScreen(new HomeScreen());
 	}
 
@@ -76,4 +94,5 @@ public class DinoShoot extends Game {
     public GameManager getGameManager() {
         return gameManager;
     }
+
 }

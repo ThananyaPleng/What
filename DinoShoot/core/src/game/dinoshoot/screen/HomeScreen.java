@@ -3,69 +3,70 @@ package game.dinoshoot.screen;
 import java.util.ArrayList;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 import game.dinoshoot.DinoShoot;
+import game.dinoshoot.input.InputCommand;
 import game.dinoshoot.ui.Button;
 
+@SuppressWarnings("Duplicates")
 public class HomeScreen extends ScreenAdapter {
 	
 	ArrayList<Button> buttons = new ArrayList<Button>();
 
 	SpriteBatch batch;
 	OrthographicCamera camera;
+
+	// Asset Manager
+	AssetManager assetManager = DinoShoot.instance.getAssetManager();
 	
 	Sprite background;
 
 	public HomeScreen() {
         batch = DinoShoot.instance.getBatch();
         camera = DinoShoot.instance.getCamera();
-
-	Texture backGroundImage = new Texture(Gdx.files.internal("img/background2.png"));
-        background = new Sprite(backGroundImage);
+		background = new Sprite(assetManager.get("img/background2.png", Texture.class));
 
         prepareButtons();
 	}
 
 	private void prepareButtons() {
-        //specify start button
-        Texture start = new Texture(Gdx.files.internal("img/BtnStart.png"));
-        Sprite startbtn = new Sprite(start);
-        startbtn.setSize(150, 50);
-        startbtn.setPosition(225, 400);
+        // Specify start button
+		buttons.add(new Button(
+				assetManager.get("img/BtnStart.png", Texture.class),
+				new Vector2(150, 50),
+				new Vector2(225, 400),
+				new Runnable() {
 
-        Button startBtn = new Button(startbtn, "start_btn");
-        startBtn.setOnClickListener(new Runnable() {
+					@Override
+					public void run() {
+						DinoShoot.instance.setScreen(new LevelScreen());
+					}
 
-            @Override
-            public void run() {
-                DinoShoot.instance.setScreen(new LevelScreen());
-            }
+				}
+		));
 
-        });
-        buttons.add(startBtn); //add startBtn to buttons array
+        // Specify quit button
+		buttons.add(new Button(
+				assetManager.get("img/BtnQuit.png", Texture.class),
+				new Vector2(150, 50),
+				new Vector2(225, 300),
+				new Runnable() {
 
-        //specify quit button
-        Texture quit = new Texture(Gdx.files.internal("img/BtnQuit.png"));
-        Sprite quitbtn = new Sprite(quit);
-        quitbtn.setSize(150, 50);
-        quitbtn.setPosition(225, 300);
+					@Override
+					public void run() {
+						Gdx.app.exit();
+					}
 
-        Button quitBtn = new Button(quitbtn, "quit_btn");
-        quitBtn.setOnClickListener(new Runnable() {
-
-            @Override
-            public void run() {
-                Gdx.app.exit();
-            }
-
-        });
-        buttons.add(quitBtn); //add quitBtn to buttons array
+				}
+		));
     }
 
 	@Override
@@ -80,7 +81,7 @@ public class HomeScreen extends ScreenAdapter {
 		batch.begin();
 		background.draw(batch);
 		for(Button btn: buttons) {
-			btn.getSprite().draw(batch);
+			btn.draw(batch);
 		}
 		batch.end();
 
@@ -90,13 +91,17 @@ public class HomeScreen extends ScreenAdapter {
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 		Vector3 screenCoords = new Vector3(screenX, screenY, 0);
 		Vector3 worldCoords = camera.unproject(screenCoords);
-		
-		for(Button btn: buttons) {
-			if(btn.isInside(worldCoords)) {
-				btn.executeOnClick();
+		Vector2 worldCoords2DSpace = new Vector2(worldCoords.x, worldCoords.y);
+
+		if(button == InputCommand.BUTTON_ACTION) {
+			for(Button btn: buttons) {
+				if(btn.isInside(worldCoords2DSpace)) {
+					btn.executeOnClick();
+					return false;
+				}
 			}
 		}
-		
+
 		return false;
 	}
 

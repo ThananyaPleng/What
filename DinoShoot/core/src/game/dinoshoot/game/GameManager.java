@@ -2,6 +2,7 @@ package game.dinoshoot.game;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
+import game.dinoshoot.utility.MathHelper;
 import game.dinoshoot.utility.PositionHelper;
 
 import java.util.ArrayList;
@@ -11,83 +12,99 @@ import java.util.Stack;
 public class GameManager {
 
     public enum State {
-        NOT_PLAYING,
+        SETUP,
         PLAYING,
+        PAUSE,
         GAMEOVER
     }
 
+    public enum Level {
+        HARD,
+        MEDIUM,
+        EASY
+    }
+
     // Game State
-    private boolean isPause = false;
-    private boolean isShooting = false;
-    private State state = State.NOT_PLAYING;
+    private State state = State.SETUP;
+    private Level level = null;
+    private Egg eggWaitToShoot;
+    private Egg eggShooting;
+
+    private ArrayList<Egg> matchColorEgg = new ArrayList<Egg>();
+    private Stack<Egg> eggsWaitForCheck = new Stack<Egg>();
+    private ArrayList<Egg> notLinkedEgg = new ArrayList<Egg>();
+
+    private int missingCount = 0;
 
     // Game Objects
     private ArrayList<Egg> eggEntities = new ArrayList<Egg>();
 
     // Game options
     private float baseEggVelocity = 1100f;
-    private Vector2 shooterPoint = new Vector2(187.5f, 50f);
-    private boolean shiftBaseRow = false;
+    private boolean shiftRowZero = false;
+    private Vector2 shooterOriginPoint = new Vector2(212.5f, 50f);
     private int heightOffset = 3;
 
     public void fireEggToPoint(Vector2 directionPoint) {
         // Check is another egg is firing, if not shoot new egg
-        if(isShooting) {
+        if(eggShooting != null) {
             return;
         }
-        isShooting = true;
+
+        // Check cursor click position
+        if(isInGameArea(directionPoint)) {
+            System.out.println("Out of game bound");
+            return;
+        }
 
         // Calculate angle from shooter point to direction point
-        float angle = (float) Math.toDegrees(Math.atan2(directionPoint.y - (shooterPoint.y), directionPoint.x - (shooterPoint.x)));
-        if(angle < 0) angle += 360;
+        float angle = MathHelper.calculateDegreeBetween2Point(shooterOriginPoint, directionPoint);
         if(angle < 1 || angle > 179) {
             System.out.println("Can't shoot below shooter.");
             return;
         }
 
-        // Create egg
-        Egg egg = new Egg(0, 0, Egg.Color.random(), shiftBaseRow, heightOffset);
-        egg.setSpritePosition(shooterPoint);
-        eggEntities.add(egg);
-        
+        // Start shoot egg
+        eggShooting = eggWaitToShoot;
+        eggWaitToShoot = null;
+
         // Set speed
-        float vX = (float)(baseEggVelocity * Math.cos(Math.toRadians(angle))),
-                vY = (float)(baseEggVelocity * Math.sin(Math.toRadians(angle)));
-        egg.setSpeed(new Vector2(vX, vY));
+        eggShooting.setSpeed(MathHelper.calculateVelocityToDirection(angle, baseEggVelocity));
     }
 
     public void createEggByWorldPosition(Vector2 position) {
         // Check cursor click position
-        if(position.x > 425 || position.x < 0 || position.y < heightOffset * 50 || position.y > 700) {
+        if(isInGameArea(position)) {
             System.out.println("Out of game bound");
             return;
         }
 
         // Create Egg for calculation
-        Egg egg = new Egg(0, 0, Egg.Color.random(), shiftBaseRow, heightOffset);
+        Egg egg = new Egg(0, 0, Egg.Color.random(), shiftRowZero, heightOffset);
         egg.setSpritePosition(position);
-        egg.updateGridPositionBySpritePosition(shiftBaseRow, heightOffset);
-        egg.lockOnGrid(shiftBaseRow, heightOffset);
+        egg.updateGridPositionBySpritePosition(shiftRowZero, heightOffset);
+        egg.lockOnGrid(shiftRowZero, heightOffset);
 
         // Check grid position
         float newCol = egg.getGridPosition().x, newRow = egg.getGridPosition().y;
-        if(newCol > 7 || newCol < 0 || newRow > 10 || newRow < 0) {
+        if(isValidGrid(newCol, newRow)) {
             System.out.println("Out of game bound");
             return;
         }
 
-        System.out.println("Set egg at: (" + newCol + ", " + newRow + ")");
+        System.out.println("Point egg at: (" + newCol + ", " + newRow + ")");
 
         // Check if any egg has surround exists egg (to lock each others)
         boolean creatable = false;
         for(Egg existsEgg : eggEntities) {
+            // Check if that position have exists egg
             if(existsEgg.getGridPosition().x == newCol && existsEgg.getGridPosition().y == newRow) {
                 System.out.println("Already have egg at that position");
                 return;
             }
 
             boolean pos1, pos2, pos3, pos4, pos5, pos6;
-            if(PositionHelper.calcShiftPosition(newRow, shiftBaseRow)) {
+            if(PositionHelper.calcShiftPosition(newRow, shiftRowZero)) {
                 pos1 = existsEgg.getGridPosition().x == newCol - 1 && existsEgg.getGridPosition().y == newRow + 1;
                 pos2 = existsEgg.getGridPosition().x == newCol && existsEgg.getGridPosition().y == newRow + 1;
                 pos3 = existsEgg.getGridPosition().x == newCol - 1 && existsEgg.getGridPosition().y == newRow;
@@ -108,6 +125,7 @@ public class GameManager {
             }
         }
 
+        // Hit roof
         if(newRow == 10) {
             creatable = true;
         }
@@ -122,20 +140,20 @@ public class GameManager {
 
     public void removeEggByWorldPosition(Vector2 position) {
         // Check cursor click position
-        if(position.x > 425 || position.x < 0 || position.y < heightOffset * 50 || position.y > 700) {
+        if(isInGameArea(position)) {
             System.out.println("Out of game bound");
             return;
         }
 
         // Create Mock Egg for calculation
-        Egg mockEgg = new Egg(0, 0, Egg.Color.random(), shiftBaseRow, heightOffset);
+        Egg mockEgg = new Egg(0, 0, Egg.Color.random(), shiftRowZero, heightOffset);
         mockEgg.setSpritePosition(position);
-        mockEgg.updateGridPositionBySpritePosition(shiftBaseRow, heightOffset);
-        mockEgg.lockOnGrid(shiftBaseRow, heightOffset);
+        mockEgg.updateGridPositionBySpritePosition(shiftRowZero, heightOffset);
+        mockEgg.lockOnGrid(shiftRowZero, heightOffset);
 
         // Check grid position
         float newCol = mockEgg.getGridPosition().x, newRow = mockEgg.getGridPosition().y;
-        if(newCol > 7 || newCol < 0 || newRow > 10 || newRow < 0) {
+        if(isValidGrid(newCol, newRow)) {
             System.out.println("Out of game bound");
             return;
         }
@@ -157,371 +175,191 @@ public class GameManager {
         }
     }
 
-    public void setup() {
-        for(int row = 5; row <= 10; row++) {
-            for(int col = 0; col < 8; col++) {
-                eggEntities.add(new Egg(col, row, Egg.Color.random(), shiftBaseRow, heightOffset));
-            }
+    private void prepareEggToShoot() {
+        if(eggWaitToShoot == null) {
+            // Create egg
+            eggWaitToShoot = new Egg(0, 0, Egg.Color.random(), shiftRowZero, heightOffset);
+            eggWaitToShoot.setSpritePosition(shooterOriginPoint);
+            eggEntities.add(eggWaitToShoot);
         }
     }
 
+    private boolean isInGameArea(Vector2 point) {
+        return point.x > 425 || point.x < 0 || point.y < 0 || point.y > 700;
+    }
+
+    private boolean isValidGrid(float col, float row) {
+        return col > 7 || col < 0 || row > 10 || row < 0;
+    }
+
+    public void setup() {
+        for(int row = 5; row <= 10; row++) {
+            for(int col = 0; col < 8; col++) {
+                eggEntities.add(new Egg(col, row, Egg.Color.random(), shiftRowZero, heightOffset));
+            }
+        }
+
+        prepareEggToShoot();
+
+        state = State.PLAYING;
+    }
+
     public void update(float dt) {
-        if(!isPause()) {
+        if(state == State.PLAYING) {
             // For all eggs in game
             for (Egg egg : getAllEggs()) {
+                // Before 1. if have any egg at row 0, game over
+                // Skip egg that is shooting or wait to shoot
+                if(!(egg == eggWaitToShoot || egg == eggShooting) && egg.getGridPosition().y == 0) {
+                    state = State.GAMEOVER;
+                }
+
                 // 1. update egg
                 egg.update(dt);
                 // END 1.
+            }
 
-                // If egg is moving
-                if(egg.getSpeed().x != 0 && egg.getSpeed().y != 0) {
-                    // 2. detect collide with wall and reverse speed
-                    Vector2 originEggPosition = egg.getSpritePosition();
+            // If egg is shooting
+            if(eggShooting != null) {
+                // 2. detect collide with wall and reverse speed
+                Vector2 originEggPosition = eggShooting.getSpritePosition();
 
-                    if (originEggPosition.x > 400 || originEggPosition.x < 25) {
-                        Vector2 eggSpeed = egg.getSpeed();
-                        egg.setSpeed(new Vector2(-eggSpeed.x, eggSpeed.y));
-                    }
-                    // END 2.
+                // Refection
+                if (originEggPosition.x > 400 || originEggPosition.x < 25) {
+                    Vector2 eggSpeed = eggShooting.getSpeed();
+                    eggShooting.setSpeed(new Vector2(-eggSpeed.x, eggSpeed.y));
+                }
+                // END 2.
 
-                    // 3. detect collide with egg or roof, lock egg into grid
-                    boolean collide = false;
+                // 3. detect collide with egg or roof, lock egg into grid
+                boolean collide = false;
 
-                    // Check overlap with another eggs
-                    for(Egg otherEgg : getAllEggs()) {
-                        // if self, skip
-                        if(egg == otherEgg) {
-                            continue;
-                        }
-
-                        // Calculate distance of another egg
-                        if(originEggPosition.dst(otherEgg.getSpritePosition()) <= 50f) {
-                            collide = true;
-                            break;
-                        }
+                // Check overlap with another eggs
+                for(Egg otherEgg : getAllEggs()) {
+                    // if self, skip
+                    if(eggShooting == otherEgg) {
+                        continue;
                     }
 
-                    // Check with roof
-                    if (originEggPosition.y >= 650) {
+                    // Calculate distance of another egg
+                    if(originEggPosition.dst(otherEgg.getSpritePosition()) <= 50f) {
                         collide = true;
+                        break;
                     }
+                }
 
-                    // If collide, lock egg into grid and set speed to zero
-                    if(collide) {
-                        egg.setSpeed(new Vector2(0, 0));
-                        egg.updateGridPositionBySpritePosition(shiftBaseRow, heightOffset);
-                        egg.lockOnGrid(shiftBaseRow, heightOffset);
-                        isShooting = false;
+                // Check with roof
+                if (originEggPosition.y >= 650) {
+                    collide = true;
+                }
 
-                        // 4. check match color and destroy it
-                        final ArrayList<Egg> matchLinkedEgg = new ArrayList<Egg>();
-                        Stack<Egg> eggsWaitForCheck = new Stack<Egg>();
+                // If collide, lock egg into grid and set speed to zero
+                if(collide) {
+                    eggShooting.setSpeed(new Vector2(0, 0));
+                    eggShooting.updateGridPositionBySpritePosition(shiftRowZero, heightOffset);
+                    eggShooting.lockOnGrid(shiftRowZero, heightOffset);
 
-                        matchLinkedEgg.add(egg);
-                        eggsWaitForCheck.push(egg);
+                    // Clear last collide state (after post runnable is run)
+                    matchColorEgg.clear();
+                    notLinkedEgg.clear();
 
-                        // Iteration until no egg to check (no more linked egg)
-                        while(!eggsWaitForCheck.isEmpty()) {
-                            Egg currentEgg = eggsWaitForCheck.pop();
+                    // 4. check match color and destroy it
+                    matchColorEgg.add(eggShooting);
+                    eggsWaitForCheck.push(eggShooting);
 
-                            // Check surround current egg if match color
-                            float eggCol = currentEgg.getGridPosition().x, eggRow = currentEgg.getGridPosition().y;
-                            Egg collideEgg;
+                    // Iteration until no egg to check (no more linked egg)
+                    while(!eggsWaitForCheck.isEmpty()) {
+                        Egg currentEgg = eggsWaitForCheck.pop();
 
-                            if(PositionHelper.calcShiftPosition(eggRow, shiftBaseRow)) {
-                                // Top-Left
-                                if((collideEgg = getEggAtGrid(eggCol - 1, eggRow + 1)) != null) {
-                                    if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
-                                        matchLinkedEgg.add(collideEgg);
-                                        eggsWaitForCheck.push(collideEgg);
-                                    }
-                                }
-                                // Top-Right
-                                if((collideEgg = getEggAtGrid(eggCol, eggRow + 1)) != null) {
-                                    if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
-                                        matchLinkedEgg.add(collideEgg);
-                                        eggsWaitForCheck.push(collideEgg);
-                                    }
-                                }
-                                // Left
-                                if((collideEgg = getEggAtGrid(eggCol - 1, eggRow)) != null) {
-                                    if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
-                                        matchLinkedEgg.add(collideEgg);
-                                        eggsWaitForCheck.push(collideEgg);
-                                    }
-                                }
-                                // Right
-                                if((collideEgg = getEggAtGrid(eggCol + 1, eggRow)) != null) {
-                                    if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
-                                        matchLinkedEgg.add(collideEgg);
-                                        eggsWaitForCheck.push(collideEgg);
-                                    }
-                                }
-                                // Bottom-Left
-                                if((collideEgg = getEggAtGrid(eggCol - 1, eggRow - 1)) != null) {
-                                    if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
-                                        matchLinkedEgg.add(collideEgg);
-                                        eggsWaitForCheck.push(collideEgg);
-                                    }
-                                }
-                                // Bottom-Right
-                                if((collideEgg = getEggAtGrid(eggCol, eggRow - 1)) != null) {
-                                    if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
-                                        matchLinkedEgg.add(collideEgg);
-                                        eggsWaitForCheck.push(collideEgg);
-                                    }
-                                }
-                            } else {
-                                // Top-Left
-                                if((collideEgg = getEggAtGrid(eggCol, eggRow + 1)) != null) {
-                                    if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
-                                        matchLinkedEgg.add(collideEgg);
-                                        eggsWaitForCheck.push(collideEgg);
-                                    }
-                                }
-                                // Top-Right
-                                if((collideEgg = getEggAtGrid(eggCol + 1, eggRow + 1)) != null) {
-                                    if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
-                                        matchLinkedEgg.add(collideEgg);
-                                        eggsWaitForCheck.push(collideEgg);
-                                    }
-                                }
-                                // Left
-                                if((collideEgg = getEggAtGrid(eggCol - 1, eggRow)) != null) {
-                                    if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
-                                        matchLinkedEgg.add(collideEgg);
-                                        eggsWaitForCheck.push(collideEgg);
-                                    }
-                                }
-                                // Right
-                                if((collideEgg = getEggAtGrid(eggCol + 1, eggRow)) != null) {
-                                    if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
-                                        matchLinkedEgg.add(collideEgg);
-                                        eggsWaitForCheck.push(collideEgg);
-                                    }
-                                }
-                                // Bottom-Left
-                                if((collideEgg = getEggAtGrid(eggCol, eggRow - 1)) != null) {
-                                    if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
-                                        matchLinkedEgg.add(collideEgg);
-                                        eggsWaitForCheck.push(collideEgg);
-                                    }
-                                }
-                                // Bottom-Right
-                                if((collideEgg = getEggAtGrid(eggCol + 1, eggRow - 1)) != null) {
-                                    if(!matchLinkedEgg.contains(collideEgg) && collideEgg.getEggColor() == egg.getEggColor()) {
-                                        matchLinkedEgg.add(collideEgg);
-                                        eggsWaitForCheck.push(collideEgg);
-                                    }
+                        // Check surround current egg if match color
+                        float eggCol = currentEgg.getGridPosition().x, eggRow = currentEgg.getGridPosition().y;
+                        Egg collideEgg;
+
+                        for(Vector2 cPosition : PositionHelper.calcSurroundPositions(eggCol, eggRow, shiftRowZero)) {
+                            if ((collideEgg = getEggAtGrid(cPosition.x, cPosition.y)) != null) {
+                                if (!matchColorEgg.contains(collideEgg) && collideEgg.getEggColor() == eggShooting.getEggColor()) {
+                                    matchColorEgg.add(collideEgg);
+                                    eggsWaitForCheck.push(collideEgg);
                                 }
                             }
                         }
-                        // END 4.
-
-                        // TODO 5. check if any egg is dependent (not link with another egg that link to roof)
-                        final ArrayList<Egg> notLinkedEgg = new ArrayList<Egg>();
-
-                        if(matchLinkedEgg.size() > 2) {
-                            for (Egg theEgg : eggEntities) {
-                                // skip destroyed egg or self
-                                if (matchLinkedEgg.contains(theEgg) || egg == theEgg) {
-                                    continue;
-                                }
-
-                                ArrayList<Egg> checkedEggList = new ArrayList<Egg>();
-                                Egg highestEgg = theEgg;
-                                eggsWaitForCheck.push(theEgg);
-
-                                while (!eggsWaitForCheck.isEmpty() && highestEgg.getGridPosition().y != 10) {
-                                    // Check surround current egg
-                                    Egg nextEgg = eggsWaitForCheck.pop();
-                                    float eggCol = nextEgg.getGridPosition().x, eggRow = nextEgg.getGridPosition().y;
-                                    Egg collideEgg;
-
-                                    if (PositionHelper.calcShiftPosition(eggRow, shiftBaseRow)) {
-                                        if ((collideEgg = getEggAtGrid(eggCol - 1, eggRow + 1)) != null) {
-                                            // Top-Left
-                                            if (!(matchLinkedEgg.contains(collideEgg) || notLinkedEgg.contains(collideEgg) || checkedEggList.contains(collideEgg))) {
-                                                checkedEggList.add(collideEgg);
-                                                eggsWaitForCheck.push(collideEgg);
-
-                                                if(collideEgg.getGridPosition().y > highestEgg.getGridPosition().y) {
-                                                    highestEgg = collideEgg;
-                                                }
-                                            }
-                                        }
-
-                                        if ((collideEgg = getEggAtGrid(eggCol, eggRow + 1)) != null) {
-                                            // Top-Right
-                                            if (!(matchLinkedEgg.contains(collideEgg) || notLinkedEgg.contains(collideEgg) || checkedEggList.contains(collideEgg))) {
-                                                checkedEggList.add(collideEgg);
-                                                eggsWaitForCheck.push(collideEgg);
-
-                                                if(collideEgg.getGridPosition().y > highestEgg.getGridPosition().y) {
-                                                    highestEgg = collideEgg;
-                                                }
-                                            }
-                                        }
-
-                                        if ((collideEgg = getEggAtGrid(eggCol - 1, eggRow)) != null) {
-                                            // Left
-                                            if (!(matchLinkedEgg.contains(collideEgg) || notLinkedEgg.contains(collideEgg) || checkedEggList.contains(collideEgg))) {
-                                                checkedEggList.add(collideEgg);
-                                                eggsWaitForCheck.push(collideEgg);
-
-                                                if(collideEgg.getGridPosition().y > highestEgg.getGridPosition().y) {
-                                                    highestEgg = collideEgg;
-                                                }
-                                            }
-                                        }
-
-                                        if ((collideEgg = getEggAtGrid(eggCol + 1, eggRow)) != null) {
-                                            // Right
-                                            if (!(matchLinkedEgg.contains(collideEgg) || notLinkedEgg.contains(collideEgg) || checkedEggList.contains(collideEgg))) {
-                                                checkedEggList.add(collideEgg);
-                                                eggsWaitForCheck.push(collideEgg);
-
-                                                if(collideEgg.getGridPosition().y > highestEgg.getGridPosition().y) {
-                                                    highestEgg = collideEgg;
-                                                }
-                                            }
-                                        }
-
-                                        if ((collideEgg = getEggAtGrid(eggCol - 1, eggRow - 1)) != null) {
-                                            // Bottom-Left
-                                            if (!(matchLinkedEgg.contains(collideEgg) || notLinkedEgg.contains(collideEgg) || checkedEggList.contains(collideEgg))) {
-                                                checkedEggList.add(collideEgg);
-                                                eggsWaitForCheck.push(collideEgg);
-
-                                                if(collideEgg.getGridPosition().y > highestEgg.getGridPosition().y) {
-                                                    highestEgg = collideEgg;
-                                                }
-                                            }
-                                        }
-
-                                        if ((collideEgg = getEggAtGrid(eggCol, eggRow - 1)) != null) {
-                                            // Bottom-Right
-                                            if (!(matchLinkedEgg.contains(collideEgg) || notLinkedEgg.contains(collideEgg) || checkedEggList.contains(collideEgg))) {
-                                                checkedEggList.add(collideEgg);
-                                                eggsWaitForCheck.push(collideEgg);
-
-                                                if(collideEgg.getGridPosition().y > highestEgg.getGridPosition().y) {
-                                                    highestEgg = collideEgg;
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        if ((collideEgg = getEggAtGrid(eggCol, eggRow + 1)) != null) {
-                                            // Top-Left
-                                            if (!(matchLinkedEgg.contains(collideEgg) || notLinkedEgg.contains(collideEgg) || checkedEggList.contains(collideEgg))) {
-                                                checkedEggList.add(collideEgg);
-                                                eggsWaitForCheck.push(collideEgg);
-
-                                                if(collideEgg.getGridPosition().y > highestEgg.getGridPosition().y) {
-                                                    highestEgg = collideEgg;
-                                                }
-                                            }
-                                        }
-
-                                        if ((collideEgg = getEggAtGrid(eggCol + 1, eggRow + 1)) != null) {
-                                            // Top-Right
-                                            if (!(matchLinkedEgg.contains(collideEgg) || notLinkedEgg.contains(collideEgg) || checkedEggList.contains(collideEgg))) {
-                                                checkedEggList.add(collideEgg);
-                                                eggsWaitForCheck.push(collideEgg);
-
-                                                if(collideEgg.getGridPosition().y > highestEgg.getGridPosition().y) {
-                                                    highestEgg = collideEgg;
-                                                }
-                                            }
-                                        }
-
-                                        if ((collideEgg = getEggAtGrid(eggCol - 1, eggRow)) != null) {
-                                            // Left
-                                            if (!(matchLinkedEgg.contains(collideEgg) || notLinkedEgg.contains(collideEgg) || checkedEggList.contains(collideEgg))) {
-                                                checkedEggList.add(collideEgg);
-                                                eggsWaitForCheck.push(collideEgg);
-
-                                                if(collideEgg.getGridPosition().y > highestEgg.getGridPosition().y) {
-                                                    highestEgg = collideEgg;
-                                                }
-                                            }
-                                        }
-
-                                        if ((collideEgg = getEggAtGrid(eggCol + 1, eggRow)) != null) {
-                                            // Right
-                                            if (!(matchLinkedEgg.contains(collideEgg) || notLinkedEgg.contains(collideEgg) || checkedEggList.contains(collideEgg))) {
-                                                checkedEggList.add(collideEgg);
-                                                eggsWaitForCheck.push(collideEgg);
-
-                                                if(collideEgg.getGridPosition().y > highestEgg.getGridPosition().y) {
-                                                    highestEgg = collideEgg;
-                                                }
-                                            }
-                                        }
-
-                                        if ((collideEgg = getEggAtGrid(eggCol, eggRow - 1)) != null) {
-                                            // Bottom-Left
-                                            if (!(matchLinkedEgg.contains(collideEgg) || notLinkedEgg.contains(collideEgg) || checkedEggList.contains(collideEgg))) {
-                                                checkedEggList.add(collideEgg);
-                                                eggsWaitForCheck.push(collideEgg);
-
-                                                if(collideEgg.getGridPosition().y > highestEgg.getGridPosition().y) {
-                                                    highestEgg = collideEgg;
-                                                }
-                                            }
-                                        }
-
-                                        if ((collideEgg = getEggAtGrid(eggCol + 1, eggRow - 1)) != null) {
-                                            // Bottom-Right
-                                            if (!(matchLinkedEgg.contains(collideEgg) || notLinkedEgg.contains(collideEgg) || checkedEggList.contains(collideEgg))) {
-                                                checkedEggList.add(collideEgg);
-                                                eggsWaitForCheck.push(collideEgg);
-
-                                                if(collideEgg.getGridPosition().y > highestEgg.getGridPosition().y) {
-                                                    highestEgg = collideEgg;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                eggsWaitForCheck.clear();
-
-                                if (highestEgg.getGridPosition().y != 10) {
-                                    notLinkedEgg.add(theEgg);
-                                }
-                            }
-                        }
-                        // End 5.
-
-                        for(Egg notEgg : notLinkedEgg) {
-                            System.out.println("Color: " + notEgg.getEggColor() + " | (" + notEgg.getGridPosition().x + ", " + notEgg.getGridPosition().y + ")");
-                        }
-
-                        // 6.
-                        // Post runnable for prevent ConCurrentException
-                        Gdx.app.postRunnable(new Runnable() {
-                            @Override
-                            public void run() {
-                               // if match linked egg more than 2, destroy all of it
-                                if(matchLinkedEgg.size() > 2) {
-                                    for (Egg matchEgg : matchLinkedEgg) {
-                                        eggEntities.remove(matchEgg);
-                                    }
-
-                                    matchLinkedEgg.clear();
-
-                                    // Destroy all of not linked to roof, egg
-                                    // Post runnable for prevent ConCurrentException
-                                    for(Egg matchEgg : notLinkedEgg) {
-                                        eggEntities.remove(matchEgg);
-                                    }
-
-                                    notLinkedEgg.clear();
-                                }
-                            }
-                        });
                     }
+                    // END 4.
+
+                    // 5. check if any egg is dependent (not link with another egg that link to roof)
+                    if(matchColorEgg.size() > 2) {
+                        for (Egg theEgg : eggEntities) {
+                            // skip destroyed egg or self
+                            if (matchColorEgg.contains(theEgg) || eggShooting == theEgg) {
+                                continue;
+                            }
+
+                            ArrayList<Egg> checkedEggList = new ArrayList<Egg>();
+                            Egg highestEgg = theEgg;
+                            eggsWaitForCheck.push(theEgg);
+
+                            while (!eggsWaitForCheck.isEmpty() && highestEgg.getGridPosition().y != 10) {
+                                // Check surround current egg
+                                Egg nextEgg = eggsWaitForCheck.pop();
+                                float eggCol = nextEgg.getGridPosition().x, eggRow = nextEgg.getGridPosition().y;
+                                Egg collideEgg;
+
+                                for(Vector2 cPosition : PositionHelper.calcSurroundPositions(eggCol, eggRow, shiftRowZero)) {
+                                    if ((collideEgg = getEggAtGrid(cPosition.x, cPosition.y)) != null) {
+                                        if (!(matchColorEgg.contains(collideEgg) || notLinkedEgg.contains(collideEgg) || checkedEggList.contains(collideEgg))) {
+                                            checkedEggList.add(collideEgg);
+                                            eggsWaitForCheck.push(collideEgg);
+
+                                            if(collideEgg.getGridPosition().y > highestEgg.getGridPosition().y) {
+                                                highestEgg = collideEgg;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            eggsWaitForCheck.clear();
+
+                            if (highestEgg.getGridPosition().y != 10) {
+                                notLinkedEgg.add(theEgg);
+                            }
+                        }
+                    }
+                    // End 5.
+
+                    // 6.
+                    // Post runnable for prevent ConCurrentException
+                    Gdx.app.postRunnable(new Runnable() {
+                        @Override
+                        public void run() {
+                            // if match linked egg more than 2, destroy all of it
+                            if(matchColorEgg.size() > 2) {
+                                for (Egg matchEgg : matchColorEgg) {
+                                    eggEntities.remove(matchEgg);
+                                }
+
+                                // Destroy all of not linked to roof, egg
+                                // Post runnable for prevent ConCurrentException
+                                for(Egg matchEgg : notLinkedEgg) {
+                                    eggEntities.remove(matchEgg);
+                                }
+                            }
+
+                            // 7. prepared new egg to shoot
+                            prepareEggToShoot();
+                        }
+                    });
+
+                    // 8. Update score
+
+                    // 9. Reset shooting egg
+                    eggShooting = null;
+
+                    // TODO 10. if all egg is destroyed, move down 3 row
+                } else {
+                    // TODO 4. continue counting missing
+
+                    // TODO 5. check if missing shot count is over threshold of current level, move down
                 }
             }
         }
@@ -529,14 +367,6 @@ public class GameManager {
 
     public ArrayList<Egg> getAllEggs() {
         return eggEntities;
-    }
-
-    public boolean isPause() {
-        return isPause;
-    }
-
-    public void setPause(boolean pause) {
-        isPause = pause;
     }
 
     public State getState() {
@@ -547,6 +377,14 @@ public class GameManager {
         this.state = state;
     }
 
+    public Level getLevel() {
+        return level;
+    }
+
+    public void setLevel(Level level) {
+        this.level = level;
+    }
+
     public int getHeightOffset() {
         return heightOffset;
     }
@@ -555,8 +393,8 @@ public class GameManager {
         this.heightOffset = heightOffset;
     }
 
-    public boolean isShiftBaseRow() {
-        return shiftBaseRow;
+    public boolean isShiftRowZero() {
+        return shiftRowZero;
     }
 
     public Egg getEggAtGrid(float col, float row) {

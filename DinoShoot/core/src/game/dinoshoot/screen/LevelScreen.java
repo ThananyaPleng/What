@@ -1,108 +1,105 @@
 package game.dinoshoot.screen;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 import game.dinoshoot.DinoShoot;
+import game.dinoshoot.game.GameManager;
+import game.dinoshoot.input.InputCommand;
 import game.dinoshoot.ui.Button;
 
 import java.util.ArrayList;
 
+@SuppressWarnings("Duplicates")
 public class LevelScreen extends ScreenAdapter {
 	
 	ArrayList<Button> buttons = new ArrayList<Button>();
 
 	SpriteBatch batch;
 	OrthographicCamera camera;
+
+    // Asset Manager
+    AssetManager assetManager = DinoShoot.instance.getAssetManager();
 	
 	Sprite background;
 
 	public LevelScreen() {
         batch = DinoShoot.instance.getBatch();
         camera = DinoShoot.instance.getCamera();
-
-        Texture backGroundImage = new Texture(Gdx.files.internal("img/background2.png"));
-        background = new Sprite(backGroundImage);
+        background = new Sprite(assetManager.get("img/background2.png", Texture.class));
 
 		prepareButtons();
 	}
 
     private void prepareButtons() {
-        //specify easy button
-        Texture easy = new Texture(Gdx.files.internal("img/BtnEasy.png"));
-        Sprite easybtn = new Sprite(easy);
-        easybtn.setSize(150, 50);
-        easybtn.setPosition(225, 400);
+        // Specify easy button
+        buttons.add(new Button(
+                assetManager.get("img/BtnEasy.png", Texture.class),
+                new Vector2(150, 50),
+                new Vector2(225, 400),
+                new Runnable(){
+                    @Override
+                    public void run() {
+                        // must edit use easy mode game
+                        DinoShoot.instance.setScreen(new GameScreen());
+                    }
 
-        Button easyBtn = new Button(easybtn, "easy_btn");
-        easyBtn.setOnClickListener(new Runnable(){
+                }
+        ));
 
-            @Override
-            public void run() {
-                // must edit use easy mode game
-                DinoShoot.instance.setScreen(new GameScreen());
-            }
+        // Specify medium button
+        buttons.add(new Button(
+                assetManager.get("img/BtnMedium.png", Texture.class),
+                new Vector2(150, 50),
+                new Vector2(225, 350),
+                new Runnable() {
 
-        });
-        buttons.add(easyBtn); //add easyBtn to buttons array
+                    @Override
+                    public void run() {
+                        //must edit use medium mode game
+                        DinoShoot.instance.setScreen(new GameScreen());
+                    }
 
-        //specify medium button
-        Texture medium = new Texture(Gdx.files.internal("img/BtnMedium.png"));
-        Sprite mediumbtn = new Sprite(medium);
-        mediumbtn.setSize(150, 50);
-        mediumbtn.setPosition(225, 350);
+                }
+        ));
 
-        Button mediumBtn = new Button(mediumbtn, "medium_btn");
-        mediumBtn.setOnClickListener(new Runnable() {
+        // Specify hard button
+        buttons.add(new Button(
+                assetManager.get("img/BtnHard.png", Texture.class),
+                new Vector2(150, 50),
+                new Vector2(225, 300),
+                new Runnable() {
 
-            @Override
-            public void run() {
-                //must edit use medium mode game
-                DinoShoot.instance.setScreen(new GameScreen());
-            }
+                    @Override
+                    public void run() {
+                        //must edit use hard mode game
+                        DinoShoot.instance.setScreen(new GameScreen());
+                    }
 
-        });
-        buttons.add(mediumBtn); //add mediumBtn to buttons array
-
-        //specify hard button
-        Texture hard = new Texture(Gdx.files.internal("img/BtnHard.png"));
-        Sprite hardbtn = new Sprite(hard);
-        hardbtn.setSize(150, 50);
-        hardbtn.setPosition(225, 300);
-
-        Button hardBtn = new Button(hardbtn, "hard_btn");
-        hardBtn.setOnClickListener(new Runnable() {
-
-            @Override
-            public void run() {
-                //must edit use hard mode game
-                DinoShoot.instance.setScreen(new GameScreen());
-            }
-
-        });
-        buttons.add(hardBtn); //add hardBtn to buttons array
+                }
+        ));
 
         //specify back button
-        Texture back = new Texture(Gdx.files.internal("img/BtnBack.png"));
-        Sprite backbtn = new Sprite(back);
-        backbtn.setSize(150, 50);
-        backbtn.setPosition(50, 50);
+        buttons.add(new Button(
+                assetManager.get("img/BtnBack.png", Texture.class),
+                new Vector2(150, 50),
+                new Vector2(50, 50),
+                new Runnable() {
 
-        Button backBtn = new Button(backbtn, "back_btn");
-        backBtn.setOnClickListener(new Runnable() {
+                    @Override
+                    public void run() {
+                        DinoShoot.instance.setScreen(new HomeScreen());
+                    }
 
-            @Override
-            public void run() {
-                DinoShoot.instance.setScreen(new HomeScreen());
-            }
-
-        });
-        buttons.add(backBtn); //add backBtn to buttons array
+                }
+        ));
     }
 
 	@Override
@@ -114,24 +111,29 @@ public class LevelScreen extends ScreenAdapter {
 		batch.setProjectionMatrix(camera.combined);
 		
 		batch.begin();
-		background.draw(batch);
-		for(Button btn: buttons) {
-			btn.getSprite().draw(batch);
-		}
+            background.draw(batch);
+
+            for(Button btn: buttons) {
+                btn.draw(batch);
+            }
 		batch.end();
-		
 	}
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 		Vector3 screenCoords = new Vector3(screenX, screenY, 0);
 		Vector3 worldCoords = camera.unproject(screenCoords);
-		
-		for(Button btn: buttons) {
-			if(btn.isInside(worldCoords)) {
-				btn.executeOnClick();
-			}
-		}
+        Vector2 worldCoords2DSpace = new Vector2(worldCoords.x, worldCoords.y);
+
+        if(button == InputCommand.BUTTON_ACTION) {
+            for(Button btn: buttons) {
+                if(btn.isInside(worldCoords2DSpace)) {
+                    btn.executeOnClick();
+                    return false;
+                }
+            }
+        }
+
 		return false;
 	}
 
