@@ -52,7 +52,7 @@ public class GameScreen extends ScreenAdapter {
 		//gameover
 		gameover = new Sprite(assetManager.get("img/gameover.png", Texture.class));
 		gameover.setSize(600, 500);
-		gameover.setPosition(0, 700);
+		gameover.setPosition(0, 250);
 		
         prepareButtons();
         prepareSprite();
