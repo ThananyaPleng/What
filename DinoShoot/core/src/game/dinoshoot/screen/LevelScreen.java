@@ -29,12 +29,14 @@ public class LevelScreen extends ScreenAdapter {
     AssetManager assetManager = DinoShoot.instance.getAssetManager();
 	
 	Sprite background;
+	Sprite dinogreen;
 
 	public LevelScreen() {
         batch = DinoShoot.instance.getBatch();
         camera = DinoShoot.instance.getCamera();
         background = new Sprite(assetManager.get("img/background2.png", Texture.class));
-
+        dinogreen = new Sprite(assetManager.get("img/Dinogreenflip.png", Texture.class));
+        dinogreen.setPosition(430, 0);
 		prepareButtons();
 	}
 
@@ -112,7 +114,7 @@ public class LevelScreen extends ScreenAdapter {
 		
 		batch.begin();
             background.draw(batch);
-
+            dinogreen.draw(batch);
             for(Button btn: buttons) {
                 btn.draw(batch);
             }

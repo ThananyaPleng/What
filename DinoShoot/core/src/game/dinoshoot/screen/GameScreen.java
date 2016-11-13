@@ -2,6 +2,7 @@ package game.dinoshoot.screen;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -38,6 +39,7 @@ public class GameScreen extends ScreenAdapter {
     Sprite shoot;
     Sprite scorewood;
     Sprite gameover;
+    Sprite dinopurple;
     Button pauseBtn;
 
     // Overlay UIs
@@ -45,14 +47,17 @@ public class GameScreen extends ScreenAdapter {
     Button oResumeBtn, oRestartBtn, oMainMenuBtn; // overlay buttons
 
     // DEBUGs
-    boolean DEBUG_Draw_Grid = true;
+    boolean DEBUG_Draw_Grid = false;
 
 	public GameScreen(GameManager.Level level) {
 
 		//gameover
 		gameover = new Sprite(assetManager.get("img/gameover.png", Texture.class));
 		gameover.setSize(600, 500);
-		gameover.setPosition(0, 250);
+		gameover.setPosition(0, 200);
+		//Dino
+		dinopurple = new Sprite(assetManager.get("img/Dino puple.png", Texture.class));
+		dinopurple.setPosition(430, 0);
 		
         prepareButtons();
         prepareSprite();
@@ -131,6 +136,10 @@ public class GameScreen extends ScreenAdapter {
         shoot.setSize(150, 50);
 		shoot.setPosition(140, 0);
 		
+		//score
+		scorewood = new Sprite(assetManager.get("img/scorenoscore.png", Texture.class));
+		scorewood.setPosition(437.5f, 175);
+		
     }
 
 	@Override
@@ -154,13 +163,15 @@ public class GameScreen extends ScreenAdapter {
             background.draw(batch);
             deadline.draw(batch);
             shoot.draw(batch);
+            dinopurple.draw(batch);
             pauseBtn.draw(batch);
 
             for(Egg egg : DinoShoot.instance.getGameManager().getAllEggs()) {
                 egg.draw(batch);
             }
-
-            font.draw(batch, String.valueOf(gameManager.getScore()), 430, 200);
+            scorewood.draw(batch);
+            font.draw(batch, String.valueOf(gameManager.getScore()), 480, 205);
+            font.setColor(Color.SALMON);
 		batch.end();
 
         debug_DrawGrid();
@@ -211,7 +222,7 @@ public class GameScreen extends ScreenAdapter {
 
         /* RENDER OVERLAY BUTTON */
         batch.begin();
-        font.draw(batch, String.valueOf(gameManager.getScore()), 225, 500);
+        font.draw(batch, String.valueOf(gameManager.getScore()), 300, 500);
         oRestartBtn.draw(batch);
         oMainMenuBtn.draw(batch);
         gameover.draw(batch);
@@ -253,9 +264,9 @@ public class GameScreen extends ScreenAdapter {
             }
         }
 
-        if(keycode == InputCommand.DEBUG_DRAW_GRID) {
-            DEBUG_Draw_Grid = !DEBUG_Draw_Grid;
-        }
+//        if(keycode == InputCommand.DEBUG_DRAW_GRID) {
+//            DEBUG_Draw_Grid = !DEBUG_Draw_Grid;
+//        }
 
         return false;
     }
@@ -282,9 +293,9 @@ public class GameScreen extends ScreenAdapter {
                 gameManager.createEggByWorldPosition(worldCoords2DSpace);
             }
 
-            if(button == InputCommand.REMOVE_EGG) {
-                gameManager.removeEggByWorldPosition(worldCoords2DSpace);
-            }
+//            if(button == InputCommand.REMOVE_EGG) {
+//                gameManager.removeEggByWorldPosition(worldCoords2DSpace);
+//            }
         } else if(gameManager.getState() == GameManager.State.PAUSE) {
             if(button == InputCommand.BUTTON_ACTION) {
                 if(oResumeBtn.isInside(worldCoords2DSpace)) {

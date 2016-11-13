@@ -51,6 +51,7 @@ public class DinoShoot extends Game {
         //Dino
         assetManager.load("img/Dino puple.png", Texture.class);
         assetManager.load("img/Dinogreen.png", Texture.class);
+        assetManager.load("img/Dinogreenflip.png", Texture.class);
         // Eggs
         assetManager.load("img/red.png", Texture.class);
         assetManager.load("img/orange.png", Texture.class);
