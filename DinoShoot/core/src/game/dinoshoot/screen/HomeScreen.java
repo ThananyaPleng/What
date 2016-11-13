@@ -28,12 +28,16 @@ public class HomeScreen extends ScreenAdapter {
 	AssetManager assetManager = DinoShoot.instance.getAssetManager();
 	
 	Sprite background;
+	Sprite Dinogreen;
+	Sprite Dinopurple;
 
 	public HomeScreen() {
         batch = DinoShoot.instance.getBatch();
         camera = DinoShoot.instance.getCamera();
-		background = new Sprite(assetManager.get("img/background2.png", Texture.class));
+		background = new Sprite(assetManager.get("img/Background6.jpg", Texture.class));
+		Dinopurple = new Sprite(assetManager.get("img/Dino puple.png", Texture.class));
 
+		Dinopurple.setPosition(100, 70);
         prepareButtons();
 	}
 
@@ -80,6 +84,7 @@ public class HomeScreen extends ScreenAdapter {
 
 		batch.begin();
 		background.draw(batch);
+		Dinopurple.draw(batch);
 		for(Button btn: buttons) {
 			btn.draw(batch);
 		}

@@ -32,10 +32,10 @@ public class DinoShoot extends Game {
         camera.setToOrtho(false, 600, 700);
 
         // Prepare assets
-        //
         // Backgrounds
         assetManager.load("img/Background3.jpg", Texture.class);
         assetManager.load("img/background2.png", Texture.class);
+        assetManager.load("img/Background6.jpg", Texture.class);
         // Buttons
         assetManager.load("img/BtnStart.png", Texture.class);
         assetManager.load("img/BtnBack.png", Texture.class);
@@ -48,6 +48,9 @@ public class DinoShoot extends Game {
         assetManager.load("img/BtnEasy.png", Texture.class);
         assetManager.load("img/BtnMedium.png", Texture.class);
         assetManager.load("img/BtnHard.png", Texture.class);
+        //Dino
+        assetManager.load("img/Dino puple.png", Texture.class);
+        assetManager.load("img/Dinogreen.png", Texture.class);
         // Eggs
         assetManager.load("img/red.png", Texture.class);
         assetManager.load("img/orange.png", Texture.class);
@@ -56,9 +59,15 @@ public class DinoShoot extends Game {
         assetManager.load("img/purple.png", Texture.class);
         // Game deadline
         assetManager.load("img/deadline.png", Texture.class);
+        //shoot
+        assetManager.load("img/shoot.png", Texture.class);
+        //score
+        assetManager.load("img/scorenoscore.png", Texture.class);
+        //gameover
+        assetManager.load("img/gameover.png", Texture.class);
         // Sync loading (wait to finish load)
         assetManager.finishLoading();
-
+        
         gameManager = new GameManager();
         this.setScreen(new HomeScreen());
 	}

@@ -35,6 +35,9 @@ public class GameScreen extends ScreenAdapter {
     // UIs
     Sprite background;
     Sprite deadline;
+    Sprite shoot;
+    Sprite scorewood;
+    Sprite gameover;
     Button pauseBtn;
 
     // Overlay UIs
@@ -45,11 +48,18 @@ public class GameScreen extends ScreenAdapter {
     boolean DEBUG_Draw_Grid = true;
 
 	public GameScreen(GameManager.Level level) {
+
+		//gameover
+		gameover = new Sprite(assetManager.get("img/gameover.png", Texture.class));
+		gameover.setSize(600, 500);
+		gameover.setPosition(0, 700);
+		
         prepareButtons();
         prepareSprite();
 
         // Setup game
         gameManager.restart(level);
+
 	}
 
 	private void prepareButtons() {
@@ -115,6 +125,12 @@ public class GameScreen extends ScreenAdapter {
         deadline = new Sprite(assetManager.get("img/deadline.png", Texture.class));
         deadline.setPosition(0, 190);
         deadline.setSize(425, 10);
+        
+        //shoot
+        shoot = new Sprite(assetManager.get("img/shoot.png", Texture.class));
+        shoot.setSize(150, 50);
+		shoot.setPosition(140, 0);
+		
     }
 
 	@Override
@@ -137,7 +153,7 @@ public class GameScreen extends ScreenAdapter {
         batch.begin();
             background.draw(batch);
             deadline.draw(batch);
-
+            shoot.draw(batch);
             pauseBtn.draw(batch);
 
             for(Egg egg : DinoShoot.instance.getGameManager().getAllEggs()) {
@@ -190,7 +206,6 @@ public class GameScreen extends ScreenAdapter {
         shapeRenderer.setColor(0, 0, 0, 0.75f);
         shapeRenderer.rect(0, 0, camera.viewportWidth, camera.viewportHeight);
         shapeRenderer.end();
-
         Gdx.gl.glDisable(GL20.GL_BLEND);
         /* END RENDER */
 
@@ -199,6 +214,7 @@ public class GameScreen extends ScreenAdapter {
         font.draw(batch, String.valueOf(gameManager.getScore()), 225, 500);
         oRestartBtn.draw(batch);
         oMainMenuBtn.draw(batch);
+        gameover.draw(batch);
         batch.end();
         /* END RENDER OVERLAY BUTTON */
     }
